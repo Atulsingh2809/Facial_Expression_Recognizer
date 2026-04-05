@@ -1,0 +1,16 @@
+# Deploy from repo subfolder: in Render, set Root Directory to `facial-expression-recognition/backend`
+# (or the path to this `backend` folder in your repository).
+services:
+  - type: web
+    name: fer-api
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --workers 2 --bind 0.0.0.0:$PORT
+    healthCheckPath: /health
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: MODEL_PATH
+        value: model/fer_model.h5
+      - key: CORS_ORIGINS
+        sync: false

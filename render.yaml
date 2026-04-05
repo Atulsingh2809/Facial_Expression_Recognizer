@@ -1,0 +1,31 @@
+# Blueprint: Render Dashboard → New → Blueprint → connect this repo (root = this folder).
+# 1) Deploy once; 2) copy the Web Service URL; 3) set REACT_APP_API_URL on the static site + redeploy;
+# 4) set CORS_ORIGINS on the Web Service to your static site URL.
+services:
+  - type: web
+    name: fer-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --workers 2 --bind 0.0.0.0:$PORT
+    healthCheckPath: /health
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: MODEL_PATH
+        value: model/fer_model.h5
+      - key: CORS_ORIGINS
+        sync: false
+
+  - type: static
+    name: fer-frontend
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: build
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: REACT_APP_API_URL
+        sync: false

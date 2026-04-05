@@ -1,0 +1,19 @@
+__pycache__/
+*.py[cod]
+.Python
+venv/
+.venv/
+env/
+.env
+.env.local
+node_modules/
+frontend/build/
+# Large: use Git LFS if fer_model.h5 exceeds GitHub limits
+# backend/model/fer_model.h5
+!**/label_map.json
+.DS_Store
+.idea/
+.vscode/
+*.log
+confusion_matrix.png
+training_metrics.json
