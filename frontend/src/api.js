@@ -22,10 +22,8 @@ export async function predictImage(imageBlob, signal) {
   const formData = new FormData();
   formData.append("image", imageBlob, "capture.jpg");
 
-  const { data } = await client.post("/predict", formData, {
-    signal,
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  // Let the browser set multipart boundary — do not set Content-Type manually.
+  const { data } = await client.post("/predict", formData, { signal });
   return data;
 }
 

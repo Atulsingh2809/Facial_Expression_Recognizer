@@ -177,6 +177,14 @@ No face (HTTP 200):
 
 Include **`backend/model/fer_model.h5`** after training (large file — consider [Git LFS](https://git-lfs.com/) or uploading the file via Render shell / external storage; for a quick demo, commit the trained weights if size allows).
 
+### 1.1. Optional: GitHub Actions deploy
+
+A deployment workflow is included at `.github/workflows/render-deploy.yml`. Set the repository secret:
+
+- `RENDER_API_KEY` = your Render API key
+
+Then push to `main` or run the workflow manually in GitHub Actions to deploy the repo using `render.yaml`.
+
 ### 2. Backend — Web Service
 
 1. In [Render Dashboard](https://dashboard.render.com/), **New +** → **Web Service**, connect the repo.

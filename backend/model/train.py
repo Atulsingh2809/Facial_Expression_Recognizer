@@ -7,6 +7,7 @@ import json
 import math
 import os
 import sys
+import time
 
 import numpy as np
 import pandas as pd
@@ -19,6 +20,67 @@ from tensorflow.keras.callbacks import (
 )
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.utils import to_categorical
+
+
+class EpochProgressLogger(keras.callbacks.Callback):
+    """Print elapsed and ETA after each epoch for clearer training progress."""
+
+    def on_train_begin(self, logs=None):
+        self._train_start = time.time()
+        self._epoch_durations = []
+        print("Training started...")
+
+    def on_epoch_end(self, epoch, logs=None):
+        now = time.time()
+        if epoch == 0:
+            duration = now - self._train_start
+        else:
+            duration = now - self._last_epoch_end
+        self._last_epoch_end = now
+        self._epoch_durations.append(duration)
+        avg_epoch = sum(self._epoch_durations) / len(self._epoch_durations)
+        total_epochs = int(self.params.get("epochs", 0))
+        done_epochs = epoch + 1
+        remain = max(0, total_epochs - done_epochs)
+        eta_seconds = int(avg_epoch * remain)
+        elapsed_seconds = int(now - self._train_start)
+        print(
+            f"[Progress] epoch {done_epochs}/{total_epochs} | "
+            f"elapsed={elapsed_seconds}s | eta~{eta_seconds}s"
+        )
+
+
+def resolve_csv_path(csv_arg: str) -> str:
+    """
+    Resolve fer2013.csv path from common locations and fail with clear guidance.
+
+    Search order:
+      1) path exactly as provided
+      2) relative to current working directory
+      3) relative to this script directory
+    """
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    candidates = [
+        csv_arg,
+        os.path.join(os.getcwd(), csv_arg),
+        os.path.join(script_dir, csv_arg),
+    ]
+    seen = []
+    for candidate in candidates:
+        norm = os.path.abspath(candidate)
+        if norm not in seen:
+            seen.append(norm)
+        if os.path.isfile(norm):
+            return norm
+
+    looked = "\n  - ".join(seen)
+    raise FileNotFoundError(
+        "FER2013 CSV not found.\n"
+        f"Checked:\n  - {looked}\n\n"
+        "Fix:\n"
+        "  1) Download FER2013 CSV from Kaggle.\n"
+        "  2) Run: python train.py --csv \"D:\\path\\to\\fer2013.csv\" --out-dir ."
+    )
 
 
 def load_fer2013(csv_path: str):
@@ -111,16 +173,25 @@ def main():
         default=os.path.dirname(os.path.abspath(__file__)),
         help="Directory to save fer_model.h5 and training_metrics.json",
     )
+    parser.add_argument(
+        "--epochs",
+        type=int,
+        default=60,
+        help="Number of training epochs (default: 60)",
+    )
     args = parser.parse_args()
 
-    if not os.path.isfile(args.csv):
-        print(f"Error: CSV not found: {args.csv}", file=sys.stderr)
+    try:
+        csv_path = resolve_csv_path(args.csv)
+    except FileNotFoundError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
         sys.exit(1)
 
     os.makedirs(args.out_dir, exist_ok=True)
     model_path = os.path.join(args.out_dir, "fer_model.h5")
 
-    x_train, y_train, x_val, y_val, x_test, y_test = load_fer2013(args.csv)
+    print(f"Using FER2013 CSV: {csv_path}")
+    x_train, y_train, x_val, y_val, x_test, y_test = load_fer2013(csv_path)
 
     num_classes = len(np.unique(y_train))
     y_train_cat = to_categorical(y_train, num_classes)
@@ -158,13 +229,14 @@ def main():
             save_best_only=True,
             verbose=1,
         ),
+        EpochProgressLogger(),
     ]
 
     steps_per_epoch = max(1, math.ceil(len(x_train) / 64))
     history = model.fit(
         train_generator,
         steps_per_epoch=steps_per_epoch,
-        epochs=60,
+        epochs=args.epochs,
         validation_data=(x_val, y_val_cat),
         callbacks=callbacks,
         verbose=1,

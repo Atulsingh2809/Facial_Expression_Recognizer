@@ -17,7 +17,7 @@ export default function App() {
         if (!cancelled) setHealth(h);
       })
       .catch(() => {
-        if (!cancelled) setHealth({ status: "error", model_loaded: false });
+        if (!cancelled) setHealth({ status: "error" });
       });
     return () => {
       cancelled = true;
@@ -54,8 +54,13 @@ export default function App() {
                 >
                   {health.status === "ok" ? "●" : "○"}
                 </span>{" "}
-                {health.status === "ok" ? "API online" : "API unreachable"}{" "}
-                {health.model_loaded ? "· model loaded" : "· model not loaded"}
+                {health.status === "ok" ? "API online" : "API unreachable"}
+                {health.status === "ok" &&
+                  (health.model_loaded
+                    ? " · model loaded"
+                    : " · model not loaded")}
+                {health.status === "error" &&
+                  " — set REACT_APP_API_URL & redeploy; check backend /health"}
               </p>
             )}
           </div>

@@ -93,9 +93,10 @@ function Update-GitHubPagesRedirect {
     if (-not (Test-Path $indexPath)) { throw "docs/index.html not found at: $indexPath" }
 
     $html = Get-Content -Path $indexPath -Raw
-    $html = [regex]::Replace($html, 'url=https://example\\.invalid', "url=$TargetUrl")
-    $html = [regex]::Replace($html, 'location\\.replace\\(\"https://example\\.invalid\"\\)', "location.replace(\"$TargetUrl\")")
-    $html = [regex]::Replace($html, '<a href=\"https://example\\.invalid\">https://example\\.invalid</a>', "<a href=\"$TargetUrl\">$TargetUrl</a>")
+    # Use simple string replacements to avoid regex/escaping issues in PowerShell.
+    $html = $html.Replace("url=https://example.invalid", "url=$TargetUrl")
+    $html = $html.Replace('location.replace("https://example.invalid")', "location.replace(`"$TargetUrl`")")
+    $html = $html.Replace('<a href="https://example.invalid">https://example.invalid</a>', "<a href=`"$TargetUrl`">$TargetUrl</a>")
     Set-Content -Path $indexPath -Value $html -Encoding UTF8
 
     Push-Location $RepoDir
