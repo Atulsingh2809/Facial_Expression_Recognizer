@@ -10,4 +10,5 @@ services:
         destination: /index.html
     envVars:
       - key: REACT_APP_API_URL
+        value: https://ought-territories-seasons-tickets.trycloudflare.com
         sync: false
